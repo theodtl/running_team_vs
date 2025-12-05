@@ -27,17 +27,6 @@ Résultat :
 🔒 Aucune activité n’est comptée deux fois
 🎯 Aucune activité d'avant lundi 00h00 ne pollue la nouvelle semaine
 
-📁 Structure du projet
-RunningVS/
-│
-├── main.py
-├── functions.py
-│
-├── teams.xlsx
-├── processed_activities.xlsx
-│
-└── README.md
-
 📄 Contenu des fichiers
 teams.xlsx
 
@@ -56,8 +45,6 @@ processed_activities.xlsx
 Contient une seule colonne :
 
 activity_key
-Théo
-…
 
 Chaque ligne représente une activité déjà comptée → jamais comptée deux fois.
 
@@ -80,7 +67,7 @@ elle est ajoutée à processed_activities.
 
 main.py
 
-Script à exécuter régulièrement.
+Script à exécuter régulièrement (1 fois par jour).
 
 Deux modes :
 
