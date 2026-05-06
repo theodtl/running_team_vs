@@ -14,12 +14,17 @@
           <h1>Running Team VS</h1>
           <p class="hero-text">Challenge par équipes, distances Strava et classement live.</p>
           <div class="hero-actions">
-            <a class="button" href="{{ './' if static_site else '/refresh' }}" aria-label="Actualiser le classement">
+            <a
+              class="button"
+              id="refresh-link"
+              href="{{ './' if static_site else '/refresh' }}"
+              aria-label="{{ 'Voir la dernière version publiée' if static_site else 'Actualiser le classement' }}"
+            >
               <span aria-hidden="true">↻</span>
-              Actualiser
+              {{ 'Voir la dernière version' if static_site else 'Actualiser' }}
             </a>
             {% if generated_at %}
-              <span class="updated">Mis à jour {{ generated_at }}</span>
+              <span class="updated">Mis à jour {{ generated_at }} heure de Paris</span>
             {% endif %}
           </div>
         </div>
@@ -81,5 +86,13 @@
         </section>
       </main>
     </div>
+    {% if static_site %}
+      <script>
+        document.getElementById("refresh-link")?.addEventListener("click", function (event) {
+          event.preventDefault();
+          window.location.href = "./?refresh=" + Date.now();
+        });
+      </script>
+    {% endif %}
   </body>
 </html>

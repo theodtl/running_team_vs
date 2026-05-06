@@ -4,6 +4,7 @@
 import shutil
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from flask import render_template
 
@@ -25,7 +26,7 @@ def build_static_site(output_dir: Path = DIST_DIR) -> Path:
         context = build_dashboard_context(
             df_teams,
             df_processed,
-            generated_at=datetime.now().strftime("%d/%m/%Y %H:%M"),
+            generated_at=datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y %H:%M"),
             static_site=True,
         )
         html = render_template("ranking.html", **context)
