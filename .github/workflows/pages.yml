@@ -9,8 +9,8 @@ on:
       - "data/teams.xlsx"
       - "data/processed_activities.xlsx"
   schedule:
-    # GitHub can delay or drop heavily contended round-minute schedules.
-    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+    # Hourly, offset from the top of the hour to avoid high-load minutes.
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
