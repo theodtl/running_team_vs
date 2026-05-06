@@ -1,16 +1,27 @@
+import os
+from pathlib import Path
+
 import pandas as pd
+from dotenv import load_dotenv
+
 from fonctions import add_new_club_activities
 
 # ================== PARAMÈTRES GÉNÉRAUX ==================
 
-ACCESS_TOKEN = "44e614821ec3ad9aae578fd1860bf40f60adc01f"
+load_dotenv()
 
-BASE_PATH = r"C:\Users\duthilt-Utilisateur\Desktop\ESIEE\Club-Running\teams_vs"
-PATH_TEAMS = fr"{BASE_PATH}\teams.xlsx"
-PATH_PROCESSED = fr"{BASE_PATH}\processed_activities.xlsx"
+ACCESS_TOKEN = os.getenv("STRAVA_ACCESS_TOKEN", "")
+if not ACCESS_TOKEN:
+    raise RuntimeError("STRAVA_ACCESS_TOKEN doit être défini dans les variables d'environnement")
 
-# Mettre à True uniquement au début du jeu (lundi 00h00)
-BOOTSTRAP = True  # <--- tu changes cette ligne quand tu veux réinitialiser une semaine
+CLUB_ID = os.getenv("CLUB_ID", "1692198")
+BASE_PATH = Path(os.getenv("RUNNING_TEAM_VS_BASE_PATH", "./data")).resolve()
+BASE_PATH.mkdir(parents=True, exist_ok=True)
+PATH_TEAMS = BASE_PATH / "teams.xlsx"
+PATH_PROCESSED = BASE_PATH / "processed_activities.xlsx"
+
+# Mettre à True uniquement au début du jeu (lundi 00h00) ou via la variable d'environnement
+BOOTSTRAP = os.getenv("RUNNING_TEAM_VS_BOOTSTRAP", "False").lower() in ("1", "true", "yes")
 
 # ================== CHARGEMENT DES DONNÉES ==================
 
@@ -48,7 +59,7 @@ if BOOTSTRAP:
         df_teams=df_teams,
         df_processed=df_processed,
         access_token=ACCESS_TOKEN,
-        club_id="1692198",
+        club_id=CLUB_ID,
         count_distances=False,  # on ne compte pas le passé
     )
 else:
@@ -59,7 +70,7 @@ else:
         df_teams=df_teams,
         df_processed=df_processed,
         access_token=ACCESS_TOKEN,
-        club_id="1692198",
+        club_id=CLUB_ID,
         count_distances=True,  # on compte les distances
     )
 

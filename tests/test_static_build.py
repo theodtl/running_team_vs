@@ -42,9 +42,11 @@ class StaticBuildTest(unittest.TestCase):
             self.assertIn("Running Team VS", index)
             self.assertIn("Team A", index)
             self.assertIn("static/styles.css", index)
+            self.assertIn("static/story-track.jpg", index)
             self.assertIn('href="./"', index)
             self.assertTrue((output_path / ".nojekyll").exists())
             self.assertTrue((output_path / "static" / "styles.css").exists())
+            self.assertTrue((output_path / "static" / "story-track.jpg").exists())
 
 
 if __name__ == "__main__":

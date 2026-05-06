@@ -12,6 +12,28 @@ TEMPLATES_DIR = BASE_DIR / "web" / "templates"
 STATIC_DIR = BASE_DIR / "web" / "static"
 
 
+def build_dashboard_context(df_teams, df_processed, generated_at=None, static_site=False):
+    teams = df_teams.sort_values(by="distance", ascending=False).to_dict(orient="records")
+    total_distance = float(df_teams["distance"].sum()) if "distance" in df_teams else 0.0
+    leader_distance = float(teams[0]["distance"]) if teams else 0.0
+
+    for team in teams:
+        distance = float(team.get("distance", 0) or 0)
+        team["distance_km"] = distance / 1000
+        team["progress"] = round((distance / leader_distance) * 100, 1) if leader_distance else 0
+
+    return {
+        "teams": teams,
+        "activities": len(df_processed),
+        "bootstrap": config.BOOTSTRAP,
+        "generated_at": generated_at,
+        "static_site": static_site,
+        "team_count": len(teams),
+        "total_distance_km": total_distance / 1000,
+        "leader": teams[0] if teams else None,
+    }
+
+
 def refresh_data() -> int:
     if not config.STRAVA_ACCESS_TOKEN or not config.STRAVA_ACCESS_TOKEN.strip():
         raise RuntimeError("STRAVA_ACCESS_TOKEN is not configured in .env")
@@ -50,16 +72,8 @@ def create_app():
 
         df_teams = load_teams(config.TEAMS_PATH)
         df_processed = load_processed(config.PROCESSED_PATH)
-        teams = df_teams.sort_values(by="distance", ascending=False).to_dict(orient="records")
 
-        return render_template(
-            "ranking.html",
-            teams=teams,
-            activities=len(df_processed),
-            bootstrap=config.BOOTSTRAP,
-            generated_at=None,
-            static_site=False,
-        )
+        return render_template("ranking.html", **build_dashboard_context(df_teams, df_processed))
 
     @app.route("/refresh")
     def refresh():

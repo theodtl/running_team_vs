@@ -7,10 +7,25 @@
     <link rel="stylesheet" href="static/styles.css" />
   </head>
   <body>
-    <div class="page">
-      <header>
-        <h1>Running Team VS</h1>
-        <p>Classement des équipes Strava club</p>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Club Running ESIEE</p>
+          <h1>Running Team VS</h1>
+          <p class="hero-text">Challenge par équipes, distances Strava et classement live.</p>
+          <div class="hero-actions">
+            <a class="button" href="{{ './' if static_site else '/refresh' }}" aria-label="Actualiser le classement">
+              <span aria-hidden="true">↻</span>
+              Actualiser
+            </a>
+            {% if generated_at %}
+              <span class="updated">Mis à jour {{ generated_at }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <img src="static/story-track.jpg" alt="" />
+        </div>
       </header>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -24,36 +39,53 @@
       {% endwith %}
 
       <main>
-        <section class="summary">
-          <div>Activités traitées : <strong>{{ activities }}</strong></div>
-          <div>Mode bootstrap : <strong>{{ 'oui' if bootstrap else 'non' }}</strong></div>
-          {% if generated_at %}
-            <div>Mis à jour : <strong>{{ generated_at }}</strong></div>
-          {% endif %}
-          <a class="button" href="{{ './' if static_site else '/refresh' }}">Rafraîchir</a>
+        <section class="metrics" aria-label="Résumé du challenge">
+          <article class="metric-card">
+            <span class="metric-label">Distance totale</span>
+            <strong>{{ "{:.2f}".format(total_distance_km) }} km</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Activités traitées</span>
+            <strong>{{ activities }}</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Équipes</span>
+            <strong>{{ team_count }}</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">En tête</span>
+            <strong>{{ leader.team_name if leader else "Aucune" }}</strong>
+          </article>
         </section>
 
-        <section class="ranking">
-          <table>
-            <thead>
-              <tr>
-                <th>Classement</th>
-                <th>Équipe</th>
-                <th>Membres</th>
-                <th>Distance (km)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for team in teams %}
-                <tr>
-                  <td>{{ loop.index }}</td>
-                  <td>{{ team.team_name }}</td>
-                  <td>{{ team.members }}</td>
-                  <td>{{ "{:.2f}".format(team.distance / 1000) }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <section class="leaderboard" aria-label="Classement des équipes">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Classement</p>
+              <h2>Course en cours</h2>
+            </div>
+            <span class="mode">Bootstrap {{ 'on' if bootstrap else 'off' }}</span>
+          </div>
+
+          <div class="team-list">
+            {% for team in teams %}
+              <article class="team-row">
+                <div class="rank">#{{ loop.index }}</div>
+                <div class="team-main">
+                  <div class="team-line">
+                    <h3>{{ team.team_name }}</h3>
+                    <strong>{{ "{:.2f}".format(team.distance_km) }} km</strong>
+                  </div>
+                  <p>{{ team.members }}</p>
+                  <div class="progress-track" aria-label="{{ team.progress }} pour cent du leader">
+                    <span style="width: {{ team.progress }}%"></span>
+                  </div>
+                </div>
+              </article>
+            {% else %}
+              <article class="empty-state">Aucune équipe à afficher.</article>
+            {% endfor %}
+          </div>
         </section>
       </main>
     </div>
