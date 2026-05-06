@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - "data/teams.xlsx"
       - "data/processed_activities.xlsx"
+  schedule:
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
