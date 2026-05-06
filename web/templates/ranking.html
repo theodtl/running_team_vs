@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Running Team VS</title>
+    <link rel="stylesheet" href="static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>Running Team VS</h1>
+        <p>Classement des équipes Strava club</p>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-list">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <main>
+        <section class="summary">
+          <div>Activités traitées : <strong>{{ activities }}</strong></div>
+          <div>Mode bootstrap : <strong>{{ 'oui' if bootstrap else 'non' }}</strong></div>
+          {% if generated_at %}
+            <div>Mis à jour : <strong>{{ generated_at }}</strong></div>
+          {% endif %}
+          <a class="button" href="{{ './' if static_site else '/refresh' }}">Rafraîchir</a>
+        </section>
+
+        <section class="ranking">
+          <table>
+            <thead>
+              <tr>
+                <th>Classement</th>
+                <th>Équipe</th>
+                <th>Membres</th>
+                <th>Distance (km)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for team in teams %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td>{{ team.team_name }}</td>
+                  <td>{{ team.members }}</td>
+                  <td>{{ "{:.2f}".format(team.distance / 1000) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

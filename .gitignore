@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.egg-info/
+.env
+.DS_Store
+data/*.xlsx
+!data/teams.xlsx
+!data/processed_activities.xlsx
+dist/
+.venv/
+.env/

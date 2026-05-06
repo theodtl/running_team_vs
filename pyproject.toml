@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "running_team_vs"
+version = "0.1.0"
+description = "Tableau de bord Strava club pour un challenge running en équipes"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "Flask>=2.3",
+    "pandas>=2.0",
+    "httpx>=0.26",
+    "python-dotenv>=1.0",
+    "openpyxl>=3.1",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["running_team_vs"]
