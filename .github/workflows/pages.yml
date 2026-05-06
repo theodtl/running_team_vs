@@ -1,5 +1,6 @@
 name: Deploy GitHub Pages
 
+# Refreshes Strava data and republishes the static GitHub Pages site.
 on:
   push:
     branches:
