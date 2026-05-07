@@ -48,6 +48,7 @@ class UpdateActivitiesTest(unittest.TestCase):
                 patch.object(config, "RESET_STATE_PATH", reset_state_path),
                 patch.object(config, "STRAVA_TOKEN_STATE_PATH", token_state_path),
                 patch.object(config, "CLUB_ID", "club"),
+                patch.object(config, "GIT_PUSH", False),
                 patch.object(update_activities, "should_reset_distances", return_value=False),
                 patch.object(update_activities, "get_access_token", return_value="token"),
                 patch.object(update_activities, "fetch_club_activities", return_value=[activity]) as fetch,
