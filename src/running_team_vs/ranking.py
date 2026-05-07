@@ -1,4 +1,14 @@
+import unicodedata
+
 import pandas as pd
+
+
+def normalize_strava_key(value) -> str:
+    text = str(value or "").strip().casefold()
+    text = "".join(
+        char for char in unicodedata.normalize("NFKD", text) if not unicodedata.combining(char)
+    )
+    return "".join(char for char in text if char.isalnum())
 
 
 def build_activity_key(activity: dict) -> str | None:
@@ -29,7 +39,7 @@ def build_member_team_map(df_roster: pd.DataFrame) -> dict[str, str]:
     member_team: dict[str, str] = {}
     for team_name in df_roster.columns:
         for member in df_roster[team_name].dropna():
-            key = str(member).strip()
+            key = normalize_strava_key(member)
             if key:
                 member_team[key] = str(team_name)
     return member_team
@@ -75,7 +85,7 @@ def update_team_distances(
         moving_time = int(activity.get("moving_time", 0) or 0)
         elapsed_time = int(activity.get("elapsed_time", 0) or 0)
         activity_name = str(activity.get("name", "")).strip()
-        team_name = member_team.get(name_key)
+        team_name = member_team.get(normalize_strava_key(name_key))
 
         if team_name:
             mask = df_distances["team_name"] == team_name
