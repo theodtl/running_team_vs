@@ -55,13 +55,14 @@ def build_dashboard_context(df_teams, df_processed, df_activity_log=None, genera
 
     runner_up_distance = float(teams[1]["distance"]) if len(teams) > 1 else 0.0
     leader_gap_km = max(leader_distance - runner_up_distance, 0.0) / 1000
+    total_members = sum(team["member_count"] for team in teams)
 
     return {
         "teams": teams,
-        "activities": len(df_processed),
         "generated_at": generated_at,
         "static_site": static_site,
         "team_count": len(teams),
+        "total_members": total_members,
         "total_distance_km": total_distance / 1000,
         "leader": teams[0] if teams else None,
         "leader_gap_km": leader_gap_km,

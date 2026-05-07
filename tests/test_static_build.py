@@ -40,6 +40,8 @@ class StaticBuildTest(unittest.TestCase):
             self.assertIn("Team A", index)
             self.assertIn("Team explorer", index)
             self.assertIn("AdaLovelace", index)
+            self.assertIn("Participants", index)
+            self.assertNotIn("Activités vues", index)
             self.assertIn("static/styles.css", index)
             self.assertNotIn("static/story-track.jpg", index)
             self.assertNotIn("Activités traitées", index)
