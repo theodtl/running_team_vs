@@ -7,7 +7,7 @@ Objectif : créer un classement hebdomadaire où deux équipes s’affrontent po
 Strava ne fournit ni date, ni moyens de filtrer correctement par semaine dans l'endpoint /clubs/{id}/activities.
 Pour contourner cette limitation :
 
-On récupère les 50 dernières activités du club.
+On récupère les activités récentes du club avec pagination.
 
 Pour chaque activité, on génère une clé unique activity_key.
 
@@ -15,13 +15,9 @@ On maintient un fichier processed_activities.xlsx qui contient toutes les activi
 
 Seules les activités nouvelles sont ajoutées à la distance totale de l’équipe.
 
-Chaque lundi à 00h00, on lance un mode spécial BOOTSTRAP qui :
+Chaque lundi entre 00h00 et 01h00, heure de Paris, le script détecte automatiquement le début de semaine et :
 
-réinitialise les distances d’équipe,
-
-vide l’historique des activités traitées,
-
-marque toutes les activités présentes comme déjà traitées sans les compter.
+réinitialise les distances d’équipe une seule fois pour la date concernée.
 
 Résultat :
 🔒 Aucune activité n’est comptée deux fois
@@ -30,15 +26,22 @@ Résultat :
 📄 Contenu des fichiers
 teams.xlsx
 
-Un tableau avec une ligne par équipe :
+Un tableau de roster avec une colonne par équipe :
 
-team_name	members	distance
-team1	ThéoD.,LucasH.,NoahB.	0
-team2	AlexL.,StanislasD.,RaphC.	0
+Team 1	Team 2
+TheoD.	AlexL.
+LucasH.	StanislasD.
+NoahB.	RaphC.
 
-members = liste des membres séparés par des virgules
-Format attendu pour chaque membre : Prénom + Initiale du nom + “.”
-Exemple : ThéoD.
+Chaque cellule contient la clé Strava du participant.
+
+distances.xlsx
+
+Contient les scores :
+
+team_name	distance
+Team 1	0
+Team 2	0
 
 processed_activities.xlsx
 
@@ -50,93 +53,84 @@ Chaque ligne représente une activité déjà comptée → jamais comptée deux 
 
 functions.py
 
-Contient la fonction principale :
+La logique actuelle vit dans src/running_team_vs/.
 
-add_new_club_activities(df_teams, df_processed, access_token, club_id, count_distances)
+update_activities.py
 
+Script à exécuter régulièrement, à la main ou via cron.
 
-Elle :
+Il :
 
-récupère les 50 dernières activités du club,
+récupère ou rafraîchit le token Strava,
+
+récupère les activités du club avec pagination,
 
 génère une clé activity_key par activité,
 
-si l’activité n’a jamais été traitée → elle est comptée (ou non selon count_distances),
+si l’activité n’a jamais été traitée → elle est comptée,
 
 elle est ajoutée à processed_activities.
 
-main.py
+Le flux principal est update_activities.py + src/running_team_vs/.
 
-Script à exécuter régulièrement (1 fois par jour).
+Le script reconstruit aussi le site statique dans docs/index.html.
 
-Deux modes :
-
-🔹 Mode normal (BOOTSTRAP = False)
-
-Pour une utilisation quotidienne / horaire.
-Seules les nouvelles activités sont ajoutées aux distances des équipes.
-
-🔹 Mode BOOTSTRAP (BOOTSTRAP = True)
-
-À exécuter une seule fois au début du jeu, chaque lundi 00h00 :
-
-Remet distance = 0 pour toutes les équipes
-
-Vide processed_activities.xlsx
-
-Marque toutes les activités existantes comme “déjà traitées”
-
-Ne compte pas les distances du passé
-
-Ensuite, repasser BOOTSTRAP = False.
+Si RUNNING_TEAM_VS_GIT_PUSH=True, le script commit et push automatiquement les fichiers nécessaires pour GitHub Pages.
 
 🕒 Cycle d'une semaine
-1️⃣ Lundi 00h00 — Début du jeu
+1️⃣ Lundi 00h00-01h00 — Début du jeu
 
-Dans main.py :
+Exécuter ou laisser le cron exécuter :
 
-BOOTSTRAP = True
+python update_activities.py
 
-
-Exécuter :
-
-python main.py
-
-
-Puis remettre :
-
-BOOTSTRAP = False
+Le reset des distances est automatique.
 
 2️⃣ Toute la semaine
 
 Exécuter régulièrement (à la main ou en tâche planifiée) :
 
-python main.py
+python update_activities.py
 
 
 → Les distances sont mises à jour dès qu'une activité apparaît dans le club.
 
 3️⃣ Suivi du classement
 
-Ouvrir le fichier teams.xlsx :
+Ouvrir le dashboard ou le fichier distances.xlsx :
 
 team_name	distance (mètres)
 team1	12340
 team2	8450
 🔐 Gestion du token
 
-Le projet utilise un token Strava de type Club Admin, permettant :
+Le projet utilise OAuth Strava avec refresh automatique.
+
+Variables nécessaires :
+
+STRAVA_CLIENT_ID
+STRAVA_CLIENT_SECRET
+STRAVA_REFRESH_TOKEN
+
+Variables optionnelles :
+
+STRAVA_ACCESS_TOKEN
+STRAVA_EXPIRES_AT
+
+Le token permet :
 
 GET https://www.strava.com/api/v3/clubs/{club_id}/activities
+
+Les nouveaux tokens sont stockés dans data/strava_token.json, fichier ignoré par Git.
 
 
 Aucun token personnel des athlètes n’est requis.
 
 ⚠️ Limitations connues
 
-Les activités uploadées en retard (ex : montre non synchronisée pendant 24h) seront comptées lors de la semaine de publication Strava, pas la semaine réelle.
+Les activités uploadées en retard (ex : montre non synchronisée pendant 24h) seront comptées lors de leur apparition dans l'endpoint club, pas forcément la semaine réelle.
 
-Strava retourne max 50 activités par requête → largement suffisant notre club :).
+Strava est paginé. Le projet récupère plusieurs pages.
 
 Strava ne fournit aucune date dans /clubs/{id}/activities, d’où la nécessité du système de “clé + log”.
 
@@ -146,6 +140,4 @@ Export HTML ou dashboard pour affichage automatique en salle
 
 Ajout d’un classement individuel
 
-Ajout d’une détection automatique du lundi (sans BOOTSTRAP manuel)
-
-Mise en place d’un cron Windows / Linux
+Mise en place d’un mapping d'alias si les clés Strava changent

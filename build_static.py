@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Build the GitHub Pages static site into dist/."""
+"""Build the static site into dist/."""
 
 import shutil
 from datetime import datetime
@@ -10,15 +10,17 @@ from flask import render_template
 
 from src.running_team_vs import config
 from src.running_team_vs.app import build_dashboard_context, create_app
-from src.running_team_vs.storage import load_processed, load_teams
+from src.running_team_vs.storage import build_team_view, load_distances, load_processed, load_team_roster
 
 BASE_DIR = Path(__file__).resolve().parent
-DIST_DIR = BASE_DIR / "dist"
 STATIC_DIR = BASE_DIR / "web" / "static"
 
 
-def build_static_site(output_dir: Path = DIST_DIR) -> Path:
-    df_teams = load_teams(config.TEAMS_PATH)
+def build_static_site(output_dir: Path | None = None) -> Path:
+    output_dir = output_dir or config.STATIC_SITE_OUTPUT_PATH
+    df_roster = load_team_roster(config.TEAMS_PATH)
+    df_distances = load_distances(config.DISTANCES_PATH, roster=df_roster, legacy_teams_path=config.TEAMS_PATH)
+    df_teams = build_team_view(df_roster, df_distances)
     df_processed = load_processed(config.PROCESSED_PATH)
 
     app = create_app()

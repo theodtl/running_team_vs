@@ -9,6 +9,10 @@ __pycache__/
 data/*.xlsx
 !data/teams.xlsx
 !data/processed_activities.xlsx
+!data/distances.xlsx
+data/strava_token.json
+.strava_*
 dist/
+!docs/
 .venv/
 .env/

@@ -1,14 +1,6 @@
 import pandas as pd
 
 
-def _normalize_member_list(members_cell):
-    if isinstance(members_cell, str):
-        return [m.strip() for m in members_cell.split(",") if m.strip()]
-    if isinstance(members_cell, (list, tuple, set)):
-        return [str(m).strip() for m in members_cell if str(m).strip()]
-    return []
-
-
 def build_activity_key(activity: dict) -> str | None:
     athlete = activity.get("athlete", {}) or {}
     firstname = str(athlete.get("firstname", "")).strip()
@@ -17,10 +9,6 @@ def build_activity_key(activity: dict) -> str | None:
     distance = activity.get("distance", 0)
     moving_time = activity.get("moving_time", 0)
     elapsed_time = activity.get("elapsed_time", 0)
-    activity_id = activity.get("id") or activity.get("activity_id")
-
-    if activity_id is not None:
-        return str(activity_id)
 
     if not firstname and not lastname and not name:
         return None
@@ -30,7 +18,48 @@ def build_activity_key(activity: dict) -> str | None:
     )
 
 
-def update_team_distances(df_teams: pd.DataFrame, df_processed: pd.DataFrame, activities: list[dict], count_distances: bool = True):
+def build_strava_key(activity: dict) -> str:
+    athlete = activity.get("athlete", {}) or {}
+    firstname = str(athlete.get("firstname", "")).strip()
+    lastname = str(athlete.get("lastname", "")).strip()
+    return firstname + lastname
+
+
+def build_member_team_map(df_roster: pd.DataFrame) -> dict[str, str]:
+    member_team: dict[str, str] = {}
+    for team_name in df_roster.columns:
+        for member in df_roster[team_name].dropna():
+            key = str(member).strip()
+            if key:
+                member_team[key] = str(team_name)
+    return member_team
+
+
+def ensure_distance_rows(df_distances: pd.DataFrame, team_names) -> pd.DataFrame:
+    if "team_name" not in df_distances.columns:
+        df_distances["team_name"] = pd.Series(dtype=str)
+    if "distance" not in df_distances.columns:
+        df_distances["distance"] = 0.0
+
+    df_distances["team_name"] = df_distances["team_name"].fillna("").astype(str)
+    df_distances["distance"] = df_distances["distance"].fillna(0).astype(float)
+
+    existing = set(df_distances["team_name"].tolist())
+    missing = [{"team_name": str(team_name), "distance": 0.0} for team_name in team_names if str(team_name) not in existing]
+    if missing:
+        df_distances = pd.concat([df_distances, pd.DataFrame(missing)], ignore_index=True)
+
+    return df_distances
+
+
+def update_team_distances(
+    df_roster: pd.DataFrame,
+    df_distances: pd.DataFrame,
+    df_processed: pd.DataFrame,
+    activities: list[dict],
+):
+    df_distances = ensure_distance_rows(df_distances, df_roster.columns)
+    member_team = build_member_team_map(df_roster)
     known_keys = set(df_processed["activity_key"].tolist())
     new_rows = []
 
@@ -39,20 +68,16 @@ def update_team_distances(df_teams: pd.DataFrame, df_processed: pd.DataFrame, ac
         if not activity_key or activity_key in known_keys:
             continue
 
-        athlete = activity.get("athlete", {}) or {}
-        firstname = str(athlete.get("firstname", "")).strip()
-        lastname = str(athlete.get("lastname", "")).strip()
-        name_key = firstname + lastname
+        name_key = build_strava_key(activity)
         distance = float(activity.get("distance", 0) or 0)
+        team_name = member_team.get(name_key)
 
-        if count_distances:
-            for idx, row in df_teams.iterrows():
-                members_list = _normalize_member_list(row.get("members", ""))
-                if name_key in members_list:
-                    current = row.get("distance", 0)
-                    if pd.isna(current):
-                        current = 0
-                    df_teams.at[idx, "distance"] = float(current) + distance
+        if team_name:
+            mask = df_distances["team_name"] == team_name
+            current = df_distances.loc[mask, "distance"].iloc[0] if mask.any() else 0
+            if pd.isna(current):
+                current = 0
+            df_distances.loc[mask, "distance"] = float(current) + distance
 
         new_rows.append({"activity_key": activity_key})
         known_keys.add(activity_key)
@@ -60,4 +85,4 @@ def update_team_distances(df_teams: pd.DataFrame, df_processed: pd.DataFrame, ac
     if new_rows:
         df_processed = pd.concat([df_processed, pd.DataFrame(new_rows)], ignore_index=True)
 
-    return df_teams, df_processed
+    return df_distances, df_processed
