@@ -39,7 +39,14 @@ def _build_member_stats(team_name, members, activity_log):
     return sorted(stats, key=lambda member: member["distance_km"], reverse=True)
 
 
-def build_dashboard_context(df_teams, df_processed, df_activity_log=None, generated_at=None, static_site=False):
+def build_dashboard_context(
+    df_teams,
+    df_processed,
+    df_activity_log=None,
+    generated_at=None,
+    static_site=False,
+    asset_version=None,
+):
     teams = df_teams.sort_values(by="distance", ascending=False).to_dict(orient="records")
     total_distance = float(df_teams["distance"].sum()) if "distance" in df_teams else 0.0
     leader_distance = float(teams[0]["distance"]) if teams else 0.0
@@ -61,6 +68,7 @@ def build_dashboard_context(df_teams, df_processed, df_activity_log=None, genera
         "teams": teams,
         "generated_at": generated_at,
         "static_site": static_site,
+        "asset_version": asset_version,
         "team_count": len(teams),
         "total_members": total_members,
         "total_distance_km": total_distance / 1000,

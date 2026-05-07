@@ -27,6 +27,11 @@ def load_last_refresh_label() -> str | None:
     return refreshed_at.astimezone(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y %H:%M")
 
 
+def static_asset_version() -> str:
+    styles_path = STATIC_DIR / "styles.css"
+    return str(int(styles_path.stat().st_mtime))
+
+
 def build_static_site(output_dir: Path | None = None) -> Path:
     output_dir = output_dir or config.STATIC_SITE_OUTPUT_PATH
     df_roster = load_team_roster(config.TEAMS_PATH)
@@ -43,6 +48,7 @@ def build_static_site(output_dir: Path | None = None) -> Path:
             df_activity_log,
             generated_at=load_last_refresh_label(),
             static_site=True,
+            asset_version=static_asset_version(),
         )
         html = render_template("ranking.html", **context)
 
