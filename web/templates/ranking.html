@@ -42,6 +42,16 @@
             <span class="metric-label">Participants</span>
             <strong>{{ total_members }}</strong>
           </article>
+          <article class="metric-card countdown-card glass-panel" aria-live="polite">
+            <span class="metric-label">Fin du round</span>
+            <div class="countdown" data-countdown>
+              <span><strong data-days>--</strong><small>j</small></span>
+              <span><strong data-hours>--</strong><small>h</small></span>
+              <span><strong data-minutes>--</strong><small>min</small></span>
+              <span><strong data-seconds>--</strong><small>s</small></span>
+            </div>
+            <p data-countdown-label>Dimanche 23:59 heure de Paris</p>
+          </article>
         </section>
 
         <section class="leaderboard glass-panel" aria-label="Explorateur des équipes">
@@ -101,5 +111,76 @@
         </section>
       </main>
     </div>
+
+    <script>
+      const parisFormatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/Paris",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      });
+
+      function parisParts(date) {
+        const parts = Object.fromEntries(parisFormatter.formatToParts(date).map((part) => [part.type, part.value]));
+        return {
+          year: Number(parts.year),
+          month: Number(parts.month),
+          day: Number(parts.day),
+          hour: Number(parts.hour),
+          minute: Number(parts.minute),
+          second: Number(parts.second),
+        };
+      }
+
+      function parisLocalToUtc(year, month, day, hour, minute, second) {
+        let utc = Date.UTC(year, month - 1, day, hour, minute, second);
+        for (let i = 0; i < 2; i += 1) {
+          const parts = parisParts(new Date(utc));
+          const parisAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+          utc -= parisAsUtc - Date.UTC(year, month - 1, day, hour, minute, second);
+        }
+        return utc;
+      }
+
+      function nextRoundEnd(now = new Date()) {
+        const parts = parisParts(now);
+        const parisTodayUtc = Date.UTC(parts.year, parts.month - 1, parts.day);
+        const weekday = new Date(parisTodayUtc).getUTCDay();
+        const daysUntilSunday = (7 - weekday) % 7;
+        const targetDay = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + daysUntilSunday));
+        return parisLocalToUtc(
+          targetDay.getUTCFullYear(),
+          targetDay.getUTCMonth() + 1,
+          targetDay.getUTCDate(),
+          23,
+          59,
+          59,
+        );
+      }
+
+      function renderCountdown() {
+        const target = nextRoundEnd();
+        let remaining = Math.max(0, target - Date.now());
+        const days = Math.floor(remaining / 86400000);
+        remaining -= days * 86400000;
+        const hours = Math.floor(remaining / 3600000);
+        remaining -= hours * 3600000;
+        const minutes = Math.floor(remaining / 60000);
+        remaining -= minutes * 60000;
+        const seconds = Math.floor(remaining / 1000);
+
+        document.querySelector("[data-days]").textContent = String(days).padStart(2, "0");
+        document.querySelector("[data-hours]").textContent = String(hours).padStart(2, "0");
+        document.querySelector("[data-minutes]").textContent = String(minutes).padStart(2, "0");
+        document.querySelector("[data-seconds]").textContent = String(seconds).padStart(2, "0");
+      }
+
+      renderCountdown();
+      window.setInterval(renderCountdown, 1000);
+    </script>
   </body>
 </html>

@@ -62,7 +62,7 @@ python /chemin/vers/running_team_vs/update_activities.py
 
 Si `RUNNING_TEAM_VS_GIT_PUSH=True`, le script commit et push automatiquement `docs/`, `data/distances.xlsx`, `data/processed_activities.xlsx`, l'état de reset éventuel et l'horodatage de dernière récupération.
 
-Pour publier avec GitHub Pages, configurer `Settings` -> `Pages` avec `Source: Deploy from a branch`, branche `main`, dossier `/docs`.
+Pour publier avec GitHub Pages, configurer `Settings` -> `Pages` avec `Source: GitHub Actions`. Le workflow présent dans `.github/workflows/pages.yml` déploie uniquement le dossier `docs/` déjà généré.
 
 Sur le serveur, il faut que le dépôt local puisse déjà faire `git push` sans intervention interactive, par exemple via une clé SSH ou un token Git configuré côté remote.
 
