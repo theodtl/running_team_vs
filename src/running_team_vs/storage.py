@@ -1,5 +1,15 @@
 import pandas as pd
 
+ACTIVITY_LOG_COLUMNS = [
+    "activity_key",
+    "team_name",
+    "athlete_key",
+    "activity_name",
+    "distance",
+    "moving_time",
+    "elapsed_time",
+]
+
 
 def _split_members(members_cell):
     if isinstance(members_cell, str):
@@ -111,4 +121,29 @@ def load_processed(path):
 
 
 def save_processed(df, path):
+    df.to_excel(path, index=False)
+
+
+def load_activity_log(path):
+    try:
+        df = pd.read_excel(path)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=ACTIVITY_LOG_COLUMNS)
+
+    for column in ACTIVITY_LOG_COLUMNS:
+        if column not in df.columns:
+            df[column] = "" if column not in {"distance", "moving_time", "elapsed_time"} else 0
+
+    df["activity_key"] = df["activity_key"].fillna("").astype(str)
+    df["team_name"] = df["team_name"].fillna("").astype(str)
+    df["athlete_key"] = df["athlete_key"].fillna("").astype(str)
+    df["activity_name"] = df["activity_name"].fillna("").astype(str)
+    df["distance"] = df["distance"].fillna(0).astype(float)
+    df["moving_time"] = df["moving_time"].fillna(0).astype(int)
+    df["elapsed_time"] = df["elapsed_time"].fillna(0).astype(int)
+
+    return df[ACTIVITY_LOG_COLUMNS]
+
+
+def save_activity_log(df, path):
     df.to_excel(path, index=False)

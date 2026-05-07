@@ -10,6 +10,7 @@ data/*.xlsx
 !data/teams.xlsx
 !data/processed_activities.xlsx
 !data/distances.xlsx
+!data/activities_log.xlsx
 data/strava_token.json
 .strava_*
 dist/

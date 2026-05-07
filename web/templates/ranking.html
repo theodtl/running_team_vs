@@ -8,68 +8,92 @@
   </head>
   <body>
     <div class="page-shell">
-      <header class="hero">
+      <header class="hero glass-panel">
         <div class="hero-copy">
           <p class="eyebrow">Club Running ESIEE</p>
           <h1>Running Team VS</h1>
           <p class="hero-text">Challenge par équipes, distances Strava et classement live.</p>
-          <div class="hero-actions">
-            {% if generated_at %}
-              <span class="updated">Mis à jour {{ generated_at }} heure de Paris</span>
-            {% endif %}
-          </div>
+          {% if generated_at %}
+            <p class="updated">Mis à jour {{ generated_at }} heure de Paris</p>
+          {% endif %}
         </div>
-      </header>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="flash-list">
-            {% for category, message in messages %}
-              <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
+        <aside class="leader-panel" aria-label="Équipe en tête">
+          <span class="panel-label">Leader</span>
+          <strong>{{ leader.team_name if leader else "Aucune équipe" }}</strong>
+          <span>{{ "{:.2f}".format(leader.distance_km) if leader else "0.00" }} km</span>
+          {% if team_count > 1 %}
+            <small>+{{ "{:.2f}".format(leader_gap_km) }} km d'avance</small>
+          {% endif %}
+        </aside>
+      </header>
 
       <main>
         <section class="metrics" aria-label="Résumé du challenge">
-          <article class="metric-card">
+          <article class="metric-card glass-panel">
             <span class="metric-label">Distance totale</span>
             <strong>{{ "{:.2f}".format(total_distance_km) }} km</strong>
           </article>
-          <article class="metric-card">
+          <article class="metric-card glass-panel">
             <span class="metric-label">Équipes</span>
             <strong>{{ team_count }}</strong>
           </article>
-          <article class="metric-card">
-            <span class="metric-label">En tête</span>
-            <strong>{{ leader.team_name if leader else "Aucune" }}</strong>
+          <article class="metric-card glass-panel">
+            <span class="metric-label">Activités vues</span>
+            <strong>{{ activities }}</strong>
           </article>
         </section>
 
-        <section class="leaderboard" aria-label="Classement des équipes">
+        <section class="leaderboard glass-panel" aria-label="Explorateur des équipes">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Classement</p>
-              <h2>Course en cours</h2>
+              <p class="eyebrow">Team explorer</p>
+              <h2>Classement & détails</h2>
             </div>
+            <p>Ouvre une équipe pour voir les contributions individuelles.</p>
           </div>
 
           <div class="team-list">
             {% for team in teams %}
-              <article class="team-row">
-                <div class="rank">#{{ loop.index }}</div>
-                <div class="team-main">
-                  <div class="team-line">
-                    <h3>{{ team.team_name }}</h3>
-                    <strong>{{ "{:.2f}".format(team.distance_km) }} km</strong>
+              <details class="team-card{% if loop.first %} is-leading{% endif %}" {% if loop.first %}open{% endif %}>
+                <summary>
+                  <span class="rank">#{{ loop.index }}</span>
+                  <span class="team-summary">
+                    <span class="team-title">{{ team.team_name }}</span>
+                    <span class="team-subline">{{ team.member_count }} membres · {{ team.activity_count }} activités</span>
+                  </span>
+                  <span class="team-score">{{ "{:.2f}".format(team.distance_km) }} km</span>
+                  <span class="chevron" aria-hidden="true"></span>
+                </summary>
+
+                <div class="team-details">
+                  <div class="progress-row">
+                    <span>{{ team.progress }}% du leader</span>
+                    <div class="progress-track" aria-label="{{ team.progress }} pour cent du leader">
+                      <span style="width: {{ team.progress }}%"></span>
+                    </div>
                   </div>
-                  <p>{{ team.members }}</p>
-                  <div class="progress-track" aria-label="{{ team.progress }} pour cent du leader">
-                    <span style="width: {{ team.progress }}%"></span>
+
+                  <div class="member-table" role="table" aria-label="Contributions individuelles">
+                    <div class="member-row member-head" role="row">
+                      <span role="columnheader">Coureur</span>
+                      <span role="columnheader">Distance</span>
+                      <span role="columnheader">Activités</span>
+                      <span role="columnheader">Dernière activité</span>
+                    </div>
+                    {% for member in team.member_stats %}
+                      <div class="member-row" role="row">
+                        <span role="cell">{{ member.name }}</span>
+                        <strong role="cell">{{ "{:.2f}".format(member.distance_km) }} km</strong>
+                        <span role="cell">{{ member.activities }}</span>
+                        <span role="cell">{{ member.last_activity if member.last_activity else "Aucune activité comptée" }}</span>
+                      </div>
+                    {% else %}
+                      <div class="member-empty">Aucun membre à afficher.</div>
+                    {% endfor %}
                   </div>
                 </div>
-              </article>
+              </details>
             {% else %}
               <article class="empty-state">Aucune équipe à afficher.</article>
             {% endfor %}

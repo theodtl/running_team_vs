@@ -19,9 +19,11 @@ from src.running_team_vs.club_api import fetch_club_activities
 from src.running_team_vs.ranking import update_team_distances
 from src.running_team_vs.storage import (
     build_team_view,
+    load_activity_log,
     load_distances,
     load_processed,
     load_team_roster,
+    save_activity_log,
     save_distances,
     save_processed,
 )
@@ -49,27 +51,39 @@ def _load_reset_state(path: Path) -> dict:
         return {}
 
 
-def reset_distances_if_needed(df_distances, now=None):
+def reset_weekly_state_if_needed(df_distances, df_activity_log, now=None):
     now = now or datetime.now(PARIS_TZ)
     today = now.astimezone(PARIS_TZ).date().isoformat()
     state = _load_reset_state(config.RESET_STATE_PATH)
 
     if not should_reset_distances(now) or state.get("last_reset_date") == today:
-        return df_distances, False
+        return df_distances, df_activity_log, False
 
     df_distances["distance"] = 0.0
+    df_activity_log = df_activity_log.iloc[0:0].copy()
     config.RESET_STATE_PATH.write_text(json.dumps({"last_reset_date": today}, indent=2), encoding="utf-8")
-    return df_distances, True
+    return df_distances, df_activity_log, True
+
+
+def save_last_refresh(now=None) -> None:
+    now = now or datetime.now(PARIS_TZ)
+    config.LAST_REFRESH_PATH.write_text(
+        json.dumps({"last_refresh_at": now.astimezone(PARIS_TZ).isoformat(timespec="minutes")}, indent=2),
+        encoding="utf-8",
+    )
 
 
 def push_site_update(output_dir: Path) -> bool:
     paths = [
         str(config.DISTANCES_PATH),
         str(config.PROCESSED_PATH),
+        str(config.ACTIVITY_LOG_PATH),
         str(output_dir),
     ]
     if config.RESET_STATE_PATH.exists():
         paths.append(str(config.RESET_STATE_PATH))
+    if config.LAST_REFRESH_PATH.exists():
+        paths.append(str(config.LAST_REFRESH_PATH))
 
     subprocess.run(["git", "add", *paths], check=True)
     diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False)
@@ -87,7 +101,8 @@ def main():
     df_roster = load_team_roster(config.TEAMS_PATH)
     df_distances = load_distances(config.DISTANCES_PATH, roster=df_roster, legacy_teams_path=config.TEAMS_PATH)
     df_processed = load_processed(config.PROCESSED_PATH)
-    df_distances, did_reset = reset_distances_if_needed(df_distances)
+    df_activity_log = load_activity_log(config.ACTIVITY_LOG_PATH)
+    df_distances, df_activity_log, did_reset = reset_weekly_state_if_needed(df_distances, df_activity_log)
     if did_reset:
         print("OK: Weekly distance reset applied for Monday 00:00-01:00 Europe/Paris")
 
@@ -101,11 +116,19 @@ def main():
     print(f"OK: {len(activities)} activities fetched")
 
     print("Updating distances...")
-    df_distances, df_processed = update_team_distances(df_roster, df_distances, df_processed, activities)
+    df_distances, df_processed, df_activity_log = update_team_distances(
+        df_roster,
+        df_distances,
+        df_processed,
+        df_activity_log,
+        activities,
+    )
 
     print("Saving data...")
     save_distances(df_distances, config.DISTANCES_PATH)
     save_processed(df_processed, config.PROCESSED_PATH)
+    save_activity_log(df_activity_log, config.ACTIVITY_LOG_PATH)
+    save_last_refresh()
 
     print("OK: Distances updated:")
     for _, row in build_team_view(df_roster, df_distances).iterrows():

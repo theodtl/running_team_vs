@@ -60,7 +60,7 @@ Pour voir le site, ouvrir `docs/index.html` dans un navigateur.
 python /chemin/vers/running_team_vs/update_activities.py
 ```
 
-Si `RUNNING_TEAM_VS_GIT_PUSH=True`, le script commit et push automatiquement `docs/`, `data/distances.xlsx`, `data/processed_activities.xlsx` et l'état de reset éventuel.
+Si `RUNNING_TEAM_VS_GIT_PUSH=True`, le script commit et push automatiquement `docs/`, `data/distances.xlsx`, `data/processed_activities.xlsx`, l'état de reset éventuel et l'horodatage de dernière récupération.
 
 Pour publier avec GitHub Pages, configurer `Settings` -> `Pages` avec `Source: Deploy from a branch`, branche `main`, dossier `/docs`.
 

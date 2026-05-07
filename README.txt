@@ -77,6 +77,8 @@ Le script reconstruit aussi le site statique dans docs/index.html.
 
 Si RUNNING_TEAM_VS_GIT_PUSH=True, le script commit et push automatiquement les fichiers nécessaires pour GitHub Pages.
 
+L'heure affichée sur la page correspond à la dernière récupération Strava réussie, stockée dans data/last_refresh.json.
+
 🕒 Cycle d'une semaine
 1️⃣ Lundi 00h00-01h00 — Début du jeu
 

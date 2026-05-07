@@ -56,12 +56,14 @@ def update_team_distances(
     df_roster: pd.DataFrame,
     df_distances: pd.DataFrame,
     df_processed: pd.DataFrame,
+    df_activity_log: pd.DataFrame,
     activities: list[dict],
 ):
     df_distances = ensure_distance_rows(df_distances, df_roster.columns)
     member_team = build_member_team_map(df_roster)
     known_keys = set(df_processed["activity_key"].tolist())
     new_rows = []
+    log_rows = []
 
     for activity in activities:
         activity_key = build_activity_key(activity)
@@ -70,6 +72,9 @@ def update_team_distances(
 
         name_key = build_strava_key(activity)
         distance = float(activity.get("distance", 0) or 0)
+        moving_time = int(activity.get("moving_time", 0) or 0)
+        elapsed_time = int(activity.get("elapsed_time", 0) or 0)
+        activity_name = str(activity.get("name", "")).strip()
         team_name = member_team.get(name_key)
 
         if team_name:
@@ -80,9 +85,22 @@ def update_team_distances(
             df_distances.loc[mask, "distance"] = float(current) + distance
 
         new_rows.append({"activity_key": activity_key})
+        log_rows.append(
+            {
+                "activity_key": activity_key,
+                "team_name": team_name or "",
+                "athlete_key": name_key,
+                "activity_name": activity_name,
+                "distance": distance,
+                "moving_time": moving_time,
+                "elapsed_time": elapsed_time,
+            }
+        )
         known_keys.add(activity_key)
 
     if new_rows:
         df_processed = pd.concat([df_processed, pd.DataFrame(new_rows)], ignore_index=True)
+    if log_rows:
+        df_activity_log = pd.concat([df_activity_log, pd.DataFrame(log_rows)], ignore_index=True)
 
-    return df_distances, df_processed
+    return df_distances, df_processed, df_activity_log
