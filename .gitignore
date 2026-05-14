@@ -13,6 +13,7 @@ data/*.xlsx
 !data/activities_log.xlsx
 data/strava_token.json
 .strava_*
+logs/
 dist/
 !docs/
 .venv/

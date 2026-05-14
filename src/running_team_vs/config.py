@@ -3,9 +3,19 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-BASE_PATH = Path(os.getenv("RUNNING_TEAM_VS_BASE_PATH", "./data")).resolve()
+
+def resolve_project_path(value: str | os.PathLike[str]) -> Path:
+    path = Path(value)
+    if path.is_absolute():
+        return path.resolve()
+    return (PROJECT_ROOT / path).resolve()
+
+
+load_dotenv(PROJECT_ROOT / ".env")
+
+BASE_PATH = resolve_project_path(os.getenv("RUNNING_TEAM_VS_BASE_PATH", "./data"))
 BASE_PATH.mkdir(parents=True, exist_ok=True)
 
 STRAVA_ACCESS_TOKEN = os.getenv("STRAVA_ACCESS_TOKEN") or ""
@@ -21,6 +31,7 @@ PROCESSED_PATH = BASE_PATH / "processed_activities.xlsx"
 ACTIVITY_LOG_PATH = BASE_PATH / "activities_log.xlsx"
 RESET_STATE_PATH = BASE_PATH / "reset_state.json"
 LAST_REFRESH_PATH = BASE_PATH / "last_refresh.json"
-STRAVA_TOKEN_STATE_PATH = Path(os.getenv("STRAVA_TOKEN_STATE_PATH") or BASE_PATH / "strava_token.json").resolve()
-STATIC_SITE_OUTPUT_PATH = Path(os.getenv("RUNNING_TEAM_VS_STATIC_OUTPUT", "./docs")).resolve()
+STRAVA_TOKEN_STATE_PATH = resolve_project_path(os.getenv("STRAVA_TOKEN_STATE_PATH") or BASE_PATH / "strava_token.json")
+STATIC_SITE_OUTPUT_PATH = resolve_project_path(os.getenv("RUNNING_TEAM_VS_STATIC_OUTPUT", "./docs"))
+LOG_PATH = resolve_project_path(os.getenv("RUNNING_TEAM_VS_LOG_PATH", "./logs/update_activities.log"))
 GIT_PUSH = os.getenv("RUNNING_TEAM_VS_GIT_PUSH", "False").lower() in ("1", "true", "yes")

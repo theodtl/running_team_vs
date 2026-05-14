@@ -6,9 +6,12 @@ Run manually or with a scheduled task.
 """
 
 import json
+import logging
+import os
 import subprocess
 import sys
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -32,6 +35,33 @@ from build_static import build_static_site
 
 
 PARIS_TZ = ZoneInfo("Europe/Paris")
+LOGGER = logging.getLogger(__name__)
+
+
+def setup_logging(log_path: Path | None = None) -> Path:
+    log_path = log_path or config.LOG_PATH
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    file_handler = RotatingFileHandler(
+        log_path,
+        maxBytes=1_000_000,
+        backupCount=5,
+        encoding="utf-8",
+    )
+    file_handler.setFormatter(formatter)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        handlers=[file_handler, console_handler],
+        force=True,
+    )
+    logging.captureWarnings(True)
+    LOGGER.info("Logging to %s", log_path)
+    return log_path
 
 
 def should_reset_distances(now=None) -> bool:
@@ -73,8 +103,65 @@ def save_last_refresh(now=None) -> None:
     )
 
 
+def run_hidden(args, **kwargs):
+    if sys.platform == "win32":
+        kwargs.setdefault("creationflags", subprocess.CREATE_NO_WINDOW)
+    return subprocess.run(args, **kwargs)
+
+
+def run_git(args, *, check=True, log_output=True):
+    env = os.environ.copy()
+    env.setdefault("GIT_TERMINAL_PROMPT", "0")
+    result = run_hidden(
+        ["git", *args],
+        cwd=config.PROJECT_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    if log_output and result.stdout:
+        LOGGER.info(result.stdout.strip())
+    if log_output and result.stderr:
+        log_method = LOGGER.error if check and result.returncode else LOGGER.info
+        log_method(result.stderr.strip())
+
+    if check and result.returncode:
+        raise subprocess.CalledProcessError(
+            result.returncode,
+            result.args,
+            output=result.stdout,
+            stderr=result.stderr,
+        )
+    return result
+
+
+def pull_remote_updates() -> None:
+    LOGGER.info("Pulling remote Git changes...")
+    run_git(["pull", "--rebase", "--autostash"])
+
+
+def git_worktree_is_clean() -> bool:
+    result = run_git(["status", "--porcelain"], check=True, log_output=False)
+    return not result.stdout.strip()
+
+
+def prepare_git_push() -> bool:
+    if not git_worktree_is_clean():
+        LOGGER.warning(
+            "Git working tree is not clean before update; automatic pull/commit/push skipped. "
+            "Commit or stash local changes, then rerun the script."
+        )
+        return False
+
+    pull_remote_updates()
+    return True
+
+
 def push_site_update(output_dir: Path) -> bool:
     paths = [
+        str(config.TEAMS_PATH),
         str(config.DISTANCES_PATH),
         str(config.PROCESSED_PATH),
         str(config.ACTIVITY_LOG_PATH),
@@ -85,37 +172,41 @@ def push_site_update(output_dir: Path) -> bool:
     if config.LAST_REFRESH_PATH.exists():
         paths.append(str(config.LAST_REFRESH_PATH))
 
-    subprocess.run(["git", "add", *paths], check=True)
-    diff = subprocess.run(["git", "diff", "--cached", "--quiet"], check=False)
+    run_git(["add", *paths])
+    diff = run_git(["diff", "--cached", "--quiet"], check=False)
     if diff.returncode == 0:
-        print("OK: No Git changes to push")
+        LOGGER.info("OK: No Git changes to push")
         return False
 
-    subprocess.run(["git", "commit", "-m", "Update Strava data and site"], check=True)
-    subprocess.run(["git", "push"], check=True)
+    run_git(["commit", "-m", "Update Strava data and site"])
+    run_git(["push"])
     return True
 
 
-def main():
-    print("Loading data...")
+def run_update():
+    git_push_enabled = config.GIT_PUSH
+    if git_push_enabled:
+        git_push_enabled = prepare_git_push()
+
+    LOGGER.info("Loading data...")
     df_roster = load_team_roster(config.TEAMS_PATH)
     df_distances = load_distances(config.DISTANCES_PATH, roster=df_roster, legacy_teams_path=config.TEAMS_PATH)
     df_processed = load_processed(config.PROCESSED_PATH)
     df_activity_log = load_activity_log(config.ACTIVITY_LOG_PATH)
     df_distances, df_activity_log, did_reset = reset_weekly_state_if_needed(df_distances, df_activity_log)
     if did_reset:
-        print("OK: Weekly distance reset applied for Monday 00:00-01:00 Europe/Paris")
+        LOGGER.info("OK: Weekly distance reset applied for Monday 00:00-01:00 Europe/Paris")
 
-    print("Fetching Strava activities...")
+    LOGGER.info("Fetching Strava activities...")
     try:
         access_token = get_access_token()
         activities = fetch_club_activities(access_token, config.CLUB_ID)
     except Exception as e:
-        print(f"ERROR: Strava API failed: {e}")
+        LOGGER.exception("ERROR: Strava API failed: %s", e)
         return 1
-    print(f"OK: {len(activities)} activities fetched")
+    LOGGER.info("OK: %s activities fetched", len(activities))
 
-    print("Updating distances...")
+    LOGGER.info("Updating distances...")
     df_distances, df_processed, df_activity_log = update_team_distances(
         df_roster,
         df_distances,
@@ -124,27 +215,38 @@ def main():
         activities,
     )
 
-    print("Saving data...")
+    LOGGER.info("Saving data...")
     save_distances(df_distances, config.DISTANCES_PATH)
     save_processed(df_processed, config.PROCESSED_PATH)
     save_activity_log(df_activity_log, config.ACTIVITY_LOG_PATH)
     save_last_refresh()
 
-    print("OK: Distances updated:")
+    LOGGER.info("OK: Distances updated:")
     for _, row in build_team_view(df_roster, df_distances).iterrows():
-        print(f"  {row['team_name']}: {row['distance'] / 1000:.2f} km")
+        LOGGER.info("  %s: %.2f km", row["team_name"], row["distance"] / 1000)
 
-    print("Building static site...")
+    LOGGER.info("Building static site...")
     output_dir = build_static_site()
-    print(f"OK: Static site built in {output_dir}")
+    LOGGER.info("OK: Static site built in %s", output_dir)
 
-    if config.GIT_PUSH:
-        print("Pushing site update to Git...")
+    if git_push_enabled:
+        LOGGER.info("Pushing site update to Git...")
         pushed = push_site_update(output_dir)
         if pushed:
-            print("OK: Git update pushed")
+            LOGGER.info("OK: Git update pushed")
+    elif config.GIT_PUSH:
+        LOGGER.warning("Git push was skipped because the repository was not ready for automatic updates")
 
     return 0
+
+
+def main():
+    setup_logging()
+    try:
+        return run_update()
+    except Exception:
+        LOGGER.exception("ERROR: Update failed")
+        return 1
 
 
 if __name__ == "__main__":

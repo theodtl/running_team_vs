@@ -65,7 +65,7 @@ class StaticBuildTest(unittest.TestCase):
             last_refresh_path = base_path / "last_refresh.json"
             output_path = base_path / "dist"
 
-            save_team_roster(pd.DataFrame({"Team A": ["AdaLovelace"]}), teams_path)
+            save_team_roster(pd.DataFrame({"Team A": ["TheoD."]}), teams_path)
             save_distances(pd.DataFrame([{"team_name": "Team A", "distance": 5000.0}]), distances_path)
             save_processed(pd.DataFrame([{"activity_key": "activity-1"}]), processed_path)
             save_activity_log(
@@ -74,7 +74,7 @@ class StaticBuildTest(unittest.TestCase):
                         {
                             "activity_key": "activity-1",
                             "team_name": "Team A",
-                            "athlete_key": "AdaLovelace",
+                            "athlete_key": "théod.",
                             "activity_name": "Morning run",
                             "distance": 5000.0,
                             "moving_time": 1200,
@@ -97,6 +97,7 @@ class StaticBuildTest(unittest.TestCase):
 
             index = (output_path / "index.html").read_text(encoding="utf-8")
             self.assertIn("Mis à jour 07/05/2026 14:30 heure de Paris", index)
+            self.assertIn("TheoD.", index)
             self.assertIn("Morning run", index)
 
 

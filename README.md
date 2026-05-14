@@ -68,6 +68,12 @@ Sur le serveur, il faut que le dépôt local puisse déjà faire `git push` sans
 
 `build_static.py` reste disponible si tu veux seulement reconstruire la page depuis les Excel existants, sans appeler Strava.
 
+Pour remettre les compteurs de la course en cours à zéro manuellement, sans toucher au roster, au token Strava, ni aux activités déjà traitées :
+
+```bash
+python reset_data.py
+```
+
 ## Données
 
 - `teams.xlsx` contient le roster : une colonne par équipe, une cellule par participant, au format clé Strava (`PrénomNom` tel que construit par le code).

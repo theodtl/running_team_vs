@@ -3,6 +3,7 @@ from pathlib import Path
 from flask import Flask, render_template
 
 from . import config
+from .ranking import normalize_strava_key
 from .storage import build_team_view, load_activity_log, load_distances, load_processed, load_team_roster
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -18,9 +19,13 @@ def _members_from_team(team):
 def _build_member_stats(team_name, members, activity_log):
     stats = []
     team_log = activity_log[activity_log["team_name"] == team_name] if activity_log is not None else None
+    if team_log is not None:
+        team_log = team_log.copy()
+        team_log["_normalized_athlete_key"] = team_log["athlete_key"].map(normalize_strava_key)
 
     for member in members:
-        member_log = team_log[team_log["athlete_key"] == member] if team_log is not None else None
+        member_key = normalize_strava_key(member)
+        member_log = team_log[team_log["_normalized_athlete_key"] == member_key] if team_log is not None else None
         distance = float(member_log["distance"].sum()) if member_log is not None and not member_log.empty else 0.0
         activities = int(len(member_log)) if member_log is not None else 0
         last_activity = ""

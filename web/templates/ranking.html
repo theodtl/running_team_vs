@@ -93,10 +93,10 @@
                     </div>
                     {% for member in team.member_stats %}
                       <div class="member-row" role="row">
-                        <span role="cell">{{ member.name }}</span>
-                        <strong role="cell">{{ "{:.2f}".format(member.distance_km) }} km</strong>
-                        <span role="cell">{{ member.activities }}</span>
-                        <span role="cell">{{ member.last_activity if member.last_activity else "Aucune activité comptée" }}</span>
+                        <span role="cell" data-label="Coureur">{{ member.name }}</span>
+                        <strong role="cell" data-label="Distance">{{ "{:.2f}".format(member.distance_km) }} km</strong>
+                        <span role="cell" data-label="Activités">{{ member.activities }}</span>
+                        <span role="cell" data-label="Dernière activité">{{ member.last_activity if member.last_activity else "Aucune activité comptée" }}</span>
                       </div>
                     {% else %}
                       <div class="member-empty">Aucun membre à afficher.</div>

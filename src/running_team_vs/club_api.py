@@ -19,7 +19,7 @@ def fetch_club_activities(access_token: str, club_id: str, per_page: int = 200, 
                 data = response.json()
 
                 if not isinstance(data, list):
-                    return activities
+                    raise RuntimeError("Strava API returned an unexpected response")
                 if not data:
                     break
 
@@ -27,7 +27,6 @@ def fetch_club_activities(access_token: str, club_id: str, per_page: int = 200, 
                 if len(data) < per_page:
                     break
     except (httpx.TimeoutException, httpx.RequestError) as e:
-        print(f"Strava API error: {e}")
-        return activities
+        raise RuntimeError(f"Strava API error: {e}") from e
 
     return activities
