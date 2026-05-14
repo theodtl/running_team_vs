@@ -429,22 +429,117 @@ h1 {
 
 @media (max-width: 700px) {
   .page-shell {
-    width: min(100% - 20px, 1120px);
-    padding-top: 10px;
+    width: min(100% - 24px, 1120px);
+    padding: 12px 0 28px;
   }
 
   .hero,
   .leaderboard {
-    padding: 18px;
+    padding: 14px;
+  }
+
+  .hero {
+    gap: 12px;
+    min-height: 0;
+  }
+
+  h1 {
+    margin-bottom: 10px;
+    font-size: 2.85rem;
+    line-height: 0.92;
+    text-shadow: 4px 4px 0 rgba(168, 91, 193, 0.24);
+  }
+
+  .hero-text {
+    margin-bottom: 12px;
+    font-size: 0.98rem;
+    line-height: 1.45;
+  }
+
+  .updated {
+    width: 100%;
+    font-size: 0.82rem;
+  }
+
+  .leader-panel {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .leader-panel strong {
+    margin: 8px 0 4px;
+    font-size: 2rem;
+  }
+
+  .leader-panel span:last-of-type {
+    font-size: 1.35rem;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+  }
+
+  .metric-card {
+    min-height: 96px;
+    padding: 13px;
+  }
+
+  .metric-label {
+    margin-bottom: 9px;
+    font-size: 0.7rem;
+  }
+
+  .metric-card strong {
+    font-size: 1.45rem;
+  }
+
+  .countdown-card {
+    grid-column: 1 / -1;
+  }
+
+  .countdown span {
+    padding: 6px 4px;
+  }
+
+  .section-heading {
+    margin-bottom: 12px;
+  }
+
+  .section-heading h2 {
+    font-size: 1.7rem;
+  }
+
+  .section-heading > p {
+    display: none;
   }
 
   .team-card summary {
-    grid-template-columns: 54px minmax(0, 1fr) 20px;
+    grid-template-columns: 46px minmax(0, 1fr) 18px;
+    gap: 8px 10px;
+    padding: 12px;
+  }
+
+  .rank {
+    width: 44px;
+    height: 44px;
+    font-size: 0.95rem;
+  }
+
+  .team-title {
+    font-size: 1.05rem;
+  }
+
+  .team-subline {
+    font-size: 0.82rem;
   }
 
   .team-score {
-    grid-column: 2;
+    grid-column: 2 / 3;
+    grid-row: 2;
     justify-self: start;
+    font-size: 1.05rem;
   }
 
   .chevron {
@@ -453,15 +548,75 @@ h1 {
   }
 
   .team-details {
-    padding: 0 12px 14px;
+    padding: 0 12px 12px;
   }
 
-  .progress-row,
+  .progress-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
   .member-row {
     grid-template-columns: 1fr;
+    gap: 8px;
+    min-height: 0;
+    padding: 12px;
   }
 
   .member-head {
     display: none;
+  }
+
+  .member-row span,
+  .member-row strong {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .member-row span::before,
+  .member-row strong::before {
+    flex: 0 0 auto;
+    color: var(--violet-deep);
+    font-size: 0.68rem;
+    font-weight: 950;
+    text-transform: uppercase;
+    content: attr(data-label);
+  }
+
+  .member-row span:first-child {
+    display: block;
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .member-row span:first-child::before {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .page-shell {
+    width: min(100% - 16px, 1120px);
+  }
+
+  h1 {
+    font-size: 2.35rem;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .team-card summary {
+    grid-template-columns: 40px minmax(0, 1fr) 16px;
+  }
+
+  .rank {
+    width: 38px;
+    height: 38px;
   }
 }
