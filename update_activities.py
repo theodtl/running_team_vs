@@ -142,20 +142,46 @@ def pull_remote_updates() -> None:
     run_git(["pull", "--rebase", "--autostash"])
 
 
-def git_worktree_is_clean() -> bool:
+def git_status_output() -> str:
     result = run_git(["status", "--porcelain"], check=True, log_output=False)
-    return not result.stdout.strip()
+    return result.stdout.strip()
+
+
+def remote_has_new_commits() -> bool:
+    run_git(["fetch"])
+    result = run_git(["rev-list", "--left-right", "--count", "HEAD...@{upstream}"], check=False, log_output=False)
+    if result.returncode != 0:
+        LOGGER.warning("Could not compare local branch with upstream; skipping automatic pull")
+        return False
+
+    ahead_behind = result.stdout.strip().split()
+    if len(ahead_behind) != 2:
+        LOGGER.warning("Unexpected Git upstream comparison output: %s", result.stdout.strip())
+        return False
+
+    behind_count = int(ahead_behind[1])
+    return behind_count > 0
 
 
 def prepare_git_push() -> bool:
-    if not git_worktree_is_clean():
-        LOGGER.warning(
-            "Git working tree is not clean before update; automatic pull/commit/push skipped. "
-            "Commit or stash local changes, then rerun the script."
-        )
-        return False
+    local_status = git_status_output()
+    if remote_has_new_commits():
+        if local_status:
+            LOGGER.warning(
+                "Remote Git changes exist, but the working tree already has local changes. "
+                "Automatic pull/commit/push skipped to avoid conflicts. Run git status, commit or stash local changes, "
+                "then rerun the script."
+            )
+            return False
 
-    pull_remote_updates()
+        pull_remote_updates()
+        return True
+
+    if local_status:
+        LOGGER.warning(
+            "Git working tree has local changes; continuing because remote is already up to date. "
+            "Only generated project files will be included in the automatic commit."
+        )
     return True
 
 
