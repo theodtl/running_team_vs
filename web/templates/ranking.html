@@ -51,7 +51,7 @@
               <span><strong data-minutes>--</strong><small>min</small></span>
               <span><strong data-seconds>--</strong><small>s</small></span>
             </div>
-            <p data-countdown-label>Jeudi 18:00 heure de Paris</p>
+            <p data-countdown-label>Jeudi 19:30 heure de Paris</p>
           </article>
         </section>
 
@@ -154,7 +154,7 @@
         const thursday = 4;
         let daysUntilThursday = (thursday - weekday + 7) % 7;
         if (
-          daysUntilThursday === 0 && (parts.hour > 18 || (parts.hour === 18 && (parts.minute > 0 || parts.second > 0)))
+          daysUntilThursday === 0 && (parts.hour > 19 || (parts.hour === 19 && (parts.minute > 30 || parts.second > 0)))
         ) {
             daysUntilThursday = 7;
         }
@@ -163,8 +163,8 @@
           targetDay.getUTCFullYear(),
           targetDay.getUTCMonth() + 1,
           targetDay.getUTCDate(),
-          18,
-          0,
+          19,
+          30,
           0,
         );
      }
